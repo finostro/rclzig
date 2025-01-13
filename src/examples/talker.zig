@@ -23,7 +23,7 @@ pub fn main() anyerror!void {
     // Initialize zig allocator
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer arena.deinit();
-    const allocator = &arena.allocator;
+    const allocator = arena.allocator();
 
     // Initialize rcl allocator (using zig allocator)
     var rcl_allocator = try rcl.RclAllocator.init(allocator);
@@ -45,7 +45,7 @@ pub fn main() anyerror!void {
     defer node.deinit();
 
     // Create publisher
-    var publisher_options = rcl.PublisherOptions.init(rcl_allocator);
+    const publisher_options = rcl.PublisherOptions.init(rcl_allocator);
     var publisher = try rcl.Publisher(std_msgs.msg.String).init(node, "chatter", publisher_options);
     defer publisher.deinit(&node);
 

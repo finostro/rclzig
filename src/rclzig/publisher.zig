@@ -46,7 +46,7 @@ pub fn Publisher(comptime MsgType: type) type {
                 .rcl_publisher = rcl.rcl_get_zero_initialized_publisher(),
                 .type_support = try MsgType.init(options.rcl_allocator.zig_allocator),
             };
-            const init_ret = rcl.rcl_publisher_init(&publisher.rcl_publisher, &node.rcl_node, @ptrToInt(publisher.type_support.rcl_type_support), @ptrToInt(topic_name.ptr), &options.rcl_options);
+            const init_ret = rcl.rcl_publisher_init(&publisher.rcl_publisher, &node.rcl_node, @intFromPtr(publisher.type_support.rcl_type_support), @intFromPtr(topic_name.ptr), &options.rcl_options);
             if (init_ret != rcl.RCL_RET_OK) {
                 return fromRclError(init_ret);
             }
@@ -90,13 +90,13 @@ test "check for memory leaks" {
     // Initialize Node
     var node_options = NodeOptions.init(rcl_allocator);
     defer node_options.deinit();
-    var node_name: []const u8 = "bar";
-    var node_namespace: []const u8 = "foo";
+    const node_name: []const u8 = "bar";
+    const node_namespace: []const u8 = "foo";
     var node = try Node.init(node_name, node_namespace, &context, node_options);
     defer node.deinit();
 
     // Initialize Publisher
-    var publisher_options = PublisherOptions.init(rcl_allocator);
+    const publisher_options = PublisherOptions.init(rcl_allocator);
     var publisher = try Publisher(std_msgs.msg.String).init(node, "chatter", publisher_options);
     defer publisher.deinit(&node);
 

@@ -50,7 +50,7 @@ pub const Context = struct {
         var context = Context{
             .rcl_context = rcl.rcl_get_zero_initialized_context(),
         };
-        const rcl_ret = rcl.rcl_init(@intCast(c_int, argv.len), @ptrToInt(argv.ptr), &options.rcl_options, &context.rcl_context);
+        const rcl_ret = rcl.rcl_init(@intCast(argv.len), @intFromPtr(argv.ptr), &options.rcl_options, &context.rcl_context);
         if (rcl_ret != rcl.RCL_RET_OK) {
             return fromRclError(rcl_ret);
         }

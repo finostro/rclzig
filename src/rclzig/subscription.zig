@@ -58,7 +58,7 @@ pub fn Subscription(comptime MsgType: type) type {
                 .type_support = try MsgType.init(options.rcl_allocator.zig_allocator),
                 .options = options,
             };
-            const init_ret = rcl.rcl_subscription_init(&subscription.rcl_subscription, &node.rcl_node, @ptrToInt(subscription.type_support.rcl_type_support), @ptrToInt(topic_name.ptr), &options.rcl_options);
+            const init_ret = rcl.rcl_subscription_init(&subscription.rcl_subscription, &node.rcl_node, @intFromPtr(subscription.type_support.rcl_type_support), @intFromPtr(topic_name.ptr), &options.rcl_options);
             if (init_ret != rcl.RCL_RET_OK) {
                 return fromRclError(init_ret);
             }
@@ -111,19 +111,19 @@ test "check for memory leaks" {
     // Initialize Node
     var node_options = NodeOptions.init(rcl_allocator);
     defer node_options.deinit();
-    var node_name: []const u8 = "bar";
-    var node_namespace: []const u8 = "foo";
+    const node_name: []const u8 = "bar";
+    const node_namespace: []const u8 = "foo";
     var node = try Node.init(node_name, node_namespace, &context, node_options);
     defer node.deinit();
 
     // Initialize Subscription
-    var subscription_options = SubscriptionOptions.init(rcl_allocator);
+    const subscription_options = SubscriptionOptions.init(rcl_allocator.*);
     var subscription = try Subscription(std_msgs.msg.String).init(node, "chatter", subscription_options);
     defer subscription.deinit(&node);
 
     // Take
     var msg_info = MessageInfo.init();
-    var msg_opt: ?std_msgs.msg.String = try subscription.take(&msg_info);
+    const msg_opt: ?std_msgs.msg.String = try subscription.take(&msg_info);
     try std.testing.expectEqual(msg_opt, null);
 
     // Shutdown Context

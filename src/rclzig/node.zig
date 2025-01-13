@@ -51,7 +51,7 @@ pub const Node = struct {
             .name = name,
             .namespace = namespace,
         };
-        var init_ret = rcl.rcl_node_init(&node.rcl_node, @ptrToInt(node.name.ptr), @ptrToInt(node.namespace.ptr), &context.rcl_context, &options.rcl_options);
+        const init_ret = rcl.rcl_node_init(&node.rcl_node, @intFromPtr(node.name.ptr), @intFromPtr(node.namespace.ptr), &context.rcl_context, &options.rcl_options);
         if (init_ret != rcl.RCL_RET_OK) {
             return fromRclError(init_ret);
         }
@@ -80,8 +80,8 @@ test "check for memory leaks" {
     // Initialize Node
     var node_options = NodeOptions.init(rcl_allocator);
     defer node_options.deinit();
-    var node_name: []const u8 = "bar";
-    var node_namespace: []const u8 = "foo";
+    const node_name: []const u8 = "bar";
+    const node_namespace: []const u8 = "foo";
     var node = try Node.init(node_name, node_namespace, &context, node_options);
     defer node.deinit();
 
