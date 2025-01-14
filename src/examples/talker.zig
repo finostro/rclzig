@@ -15,7 +15,34 @@
 const std = @import("std");
 
 const rcl = @import("rclzig");
-const std_msgs = @import("std_msgs");
+
+pub const c = @cImport({
+    @cInclude("std_msgs/msg/string.h");
+    @cInclude("std_msgs/msg/float32_multi_array.h");
+    @cInclude("rcutils/allocator.h");
+});
+
+const StringMsg = rcl.msg.Msg(c, "std_msgs", "msg", "String");
+const MultiArrayMsg = rcl.msg.Msg(c, "std_msgs", "msg", "Float32MultiArray");
+
+fn setString(msg: *StringMsg, string: []const u8) bool {
+    std.debug.print("setString\n", .{});
+    std.debug.print("to : {s}\n ", .{string});
+    std.debug.print("orig : {s}  {d}  cap {d}\n", .{ msg.rcl_message.data.data, msg.rcl_message.data.size, msg.rcl_message.data.capacity });
+    const allocator = c.rcutils_get_default_allocator();
+    const new_data = allocator.reallocate.?(msg.rcl_message.data.data, string.len + 1, allocator.state);
+    if (new_data) |data| {
+        var array_data: []u8 = @as([*]u8, @ptrCast(data))[0 .. string.len + 1];
+        @memcpy(array_data[0..string.len], string);
+        array_data[string.len] = 0;
+        msg.rcl_message.data.data = @as([*c]u8, @ptrCast(array_data));
+        msg.rcl_message.data.size = string.len;
+        msg.rcl_message.data.capacity = string.len + 1;
+        return true;
+    } else {
+        return false;
+    }
+}
 
 pub fn main() anyerror!void {
     std.log.info("Start rclzig talker\n", .{});
@@ -46,13 +73,21 @@ pub fn main() anyerror!void {
 
     // Create publisher
     const publisher_options = rcl.PublisherOptions.init(rcl_allocator);
-    var publisher = try rcl.Publisher(std_msgs.msg.String).init(node, "chatter", publisher_options);
+    var publisher = try rcl.Publisher(MultiArrayMsg).init(node, "chatter", publisher_options);
     defer publisher.deinit(&node);
 
     // Create a message to publish
-    var message = try std_msgs.msg.String.init(rcl_allocator.zig_allocator);
+    var message = try MultiArrayMsg.init(rcl_allocator.zig_allocator);
     defer message.deinit();
-    try message.setData("Hello world");
+    // if (!setString(&message, "Hello world")) {
+    //     std.debug.panic("setString failed", .{});
+    // }
+    // const str: []const u8 = "hola tortuga hola oruga contento voy";
+    // if (message.setField("data", str)) {} else |_| {
+    //     std.debug.panic("could not set strng", .{});
+    // }
+    const floats = [_]f32{ 2.3, 1.0, 1.0, 3.5 };
+    try message.setField("data", floats);
 
     // Start publishing
     var timer = try std.time.Timer.start();

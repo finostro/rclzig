@@ -28,6 +28,7 @@ pub const errors = @import("errors.zig");
 pub const node = @import("node.zig");
 pub const publisher = @import("publisher.zig");
 pub const subscription = @import("subscription.zig");
+pub const msg = @import("msg.zig");
 
 test {
     _ = allocator;

@@ -15,7 +15,14 @@
 const std = @import("std");
 
 const rcl = @import("rclzig");
-const std_msgs = @import("std_msgs");
+
+pub const c = @cImport({
+    @cInclude("std_msgs/msg/string.h");
+    @cInclude("std_msgs/msg/float32_multi_array.h");
+    @cInclude("rcutils/allocator.h");
+});
+
+const MultiArrayMsg = rcl.msg.Msg(c, "std_msgs", "msg", "Float32MultiArray");
 
 pub fn main() anyerror!void {
     std.log.info("Start rclzig listener", .{});
@@ -46,7 +53,7 @@ pub fn main() anyerror!void {
 
     // Create subscription
     const subscription_options = rcl.SubscriptionOptions.init(rcl_allocator);
-    var subscription = try rcl.Subscription(std_msgs.msg.String).init(node, "chatter", subscription_options);
+    var subscription = try rcl.Subscription(MultiArrayMsg).init(node, "chatter", subscription_options);
     defer subscription.deinit(&node);
 
     // Spin on node
@@ -55,11 +62,10 @@ pub fn main() anyerror!void {
     const poll_period: u64 = 1e9;
     var msg_info = rcl.subscription.MessageInfo.init();
     while (true) {
-        var msg_opt: ?std_msgs.msg.String = try subscription.take(&msg_info);
+        var msg_opt: ?MultiArrayMsg = try subscription.take(&msg_info);
         if (msg_opt) |*msg| {
             defer msg.deinit();
-            const data = msg.getData();
-            std.log.info("I heard: {s} \n", .{data});
+            std.log.info("I heard: {any} \n", .{msg.rcl_message.data.data[0..msg.rcl_message.data.size]});
         }
         std.time.sleep(poll_period);
     }
