@@ -289,10 +289,11 @@ pub fn build(b: *std.Build) !void {
     // This creates a build step. It will be visible in the `zig build --help` menu,
     // and can be selected like this: `zig build run`
     // This will evaluate the `run` step rather than the default, which is "install".
-    const run_step = b.step("run", "Run the app");
-    run_step.dependOn(&talker_cmd.step);
-    run_step.dependOn(&listener_cmd.step);
+    const talker_step = b.step("talker", "Run the app");
+    talker_step.dependOn(&talker_cmd.step);
 
+    const listener_step = b.step("listener", "Run the app");
+    listener_step.dependOn(&listener_cmd.step);
     // Creates a step for unit testing. This only builds the test executable
     // but does not run it.
     const rclzig_tests = b.addTest(.{
