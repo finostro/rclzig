@@ -23,8 +23,6 @@ fn linkAllFiles(module: *std.Build.Module, folder_path: []const u8) !void {
 }
 /// Link a single ament C package.
 fn amentTargetCDependencies(allocator: std.mem.Allocator, module: *std.Build.Module, package_names: []const []const u8) !void {
-    // _ = allocator;
-
     comptime {
         switch (@TypeOf(module)) {
             *std.Build.Module => {},
@@ -40,7 +38,6 @@ fn amentTargetCDependencies(allocator: std.mem.Allocator, module: *std.Build.Mod
     for (package_names) |name| {
         std.debug.print("dependency name:    {s}\n", .{name});
     }
-    // const package_lib_found = [package_names.len]bool{false};
 
     const ament_env = std.posix.getenv("AMENT_PREFIX_PATH");
     if (ament_env) |ament_prefix| {
@@ -128,7 +125,7 @@ pub fn build(b: *std.Build) !void {
     defer arena.deinit();
     const allocator = arena.allocator();
 
-    const rcl_dependencies = [_][]const u8{
+    const dependencies = [_][]const u8{
         "rcl",
         "rcl_interfaces",
         "rcl_logging_interface",
@@ -142,11 +139,6 @@ pub fn build(b: *std.Build) !void {
         "tracetools",
         "std_msgs",
     };
-    // const std_msgs_dependencies = [_][]const u8{
-    //     "std_msgs",
-    //     "rosidl_runtime_c",
-    //     "rosidl_typesupport_interface",
-    // };
     // Standard target options allows the person running `zig build` to choose
     // what target to build for. Here we do not override the defaults, which
     // means any target is allowed, and the default is native. Other options
@@ -171,31 +163,16 @@ pub fn build(b: *std.Build) !void {
         .optimize = optimize,
     });
 
-    amentTargetCDependencies(allocator, rclzig_mod, &rcl_dependencies) catch |err| {
+    amentTargetCDependencies(allocator, rclzig_mod, &dependencies) catch |err| {
         std.log.err("Error adding ament depenedencies to target {s}", .{@errorName(err)});
         return err;
     };
 
     // We will also create a module for our other entry point, 'main.zig'.
-    // const std_msgs_mod = b.createModule(.{
-    //     // `root_source_file` is the Zig "entry point" of the module. If a module
-    //     // only contains e.g. external object files, you can make this `null`.
-    //     // In this case the main source file is merely a path, however, in more
-    //     // complicated build scripts, this could be a generated file.
-    //     .root_source_file = b.path("src/std_msgs/std_msgs.zig"),
-    //     .target = target,
-    //     .optimize = optimize,
-    // });
-    //
-    // amentTargetCDependencies(allocator, std_msgs_mod, &std_msgs_dependencies) catch |err| {
-    //     std.log.err("Error adding ament depenedencies to target {s}", .{@errorName(err)});
-    //     return err;
-    // };
     //
     // Modules can depend on one another using the `std.Build.Module.addImport` function.
     // This is what allows Zig source code to use `@import("foo")` where 'foo' is not a
     // file path. In this case, we set up `exe_mod` to import `lib_mod`.
-    // exe_mod.addImport("rclzig2_lib", lib_mod);
 
     // Now, we will create a static library based on the module we created above.
     // This creates a `std.Build.Step.Compile`, which is the build step responsible
@@ -204,60 +181,30 @@ pub fn build(b: *std.Build) !void {
         .name = "rclzig",
         .root_module = rclzig_mod,
     });
-    // amentTargetCDependencies(allocator, rclzig_lib, &rcl_dependencies);
 
     // Now, we will create a static library based on the module we created above.
     // This creates a `std.Build.Step.Compile`, which is the build step responsible
     // for actually invoking the compiler.
-    // const std_msgs_lib = b.addStaticLibrary(.{
-    //     .name = "std_msgs",
-    //     .root_module = std_msgs_mod,
-    // });
-    // amentTargetCDependencies(allocator, std_msgs_lib, &std_msgs_dependencies);
-
     // This declares intent for the library to be installed into the standard
     // location when the user invokes the "install" step (the default step when
     // running `zig build`).
-    // b.installArtifact(std_msgs_lib);
     b.installArtifact(rclzig_lib);
 
     // This creates another `std.Build.Step.Compile`, but this one builds an executable
     // rather than a static library.
     const talker_exe = b.addExecutable(.{ .name = "talker", .root_source_file = b.path("src/examples/talker.zig"), .target = target });
     talker_exe.root_module.addImport("rclzig", rclzig_mod);
-    // talker_exe.root_module.addImport("std_msgs", std_msgs_mod);
-    // talker_exe.linkLibrary(std_msgs_lib);
-    // talker_exe.linkLibrary(rclzig_lib);
-    amentTargetCDependencies(allocator, talker_exe.root_module, &rcl_dependencies) catch |err| {
+    amentTargetCDependencies(allocator, talker_exe.root_module, &dependencies) catch |err| {
         std.log.err("Error adding ament depenedencies to target {s}", .{@errorName(err)});
         return err;
     };
-    // amentTargetCDependencies(allocator, talker_exe.root_module, &std_msgs_dependencies) catch |err| {
-    //     std.log.err("Error adding ament depenedencies to target {s}", .{@errorName(err)});
-    //     return err;
-    // };
-
-    // amentTargetCDependencies(allocator, talker_exe, std_msgs_dependencies);
-    // amentTargetCDependencies(allocator, talker_exe, rcl_dependencies);
 
     const listener_exe = b.addExecutable(.{ .name = "listener", .root_source_file = b.path("src/examples/listener.zig"), .target = target });
     listener_exe.root_module.addImport("rclzig", rclzig_mod);
-    // listener_exe.root_module.addImport("std_msgs", std_msgs_mod);
-    // listener_exe.linkLibrary(std_msgs_lib);
-    // listener_exe.linkLibrary(rclzig_lib);
-    amentTargetCDependencies(allocator, listener_exe.root_module, &rcl_dependencies) catch |err| {
+    amentTargetCDependencies(allocator, listener_exe.root_module, &dependencies) catch |err| {
         std.log.err("Error adding ament depenedencies to target {s}", .{@errorName(err)});
         return err;
     };
-    // amentTargetCDependencies(allocator, listener_exe.root_module, &std_msgs_dependencies) catch |err| {
-    //     std.log.err("Error adding ament depenedencies to target {s}", .{@errorName(err)});
-    //     return err;
-    // };
-
-    // amentTargetCDependencies(allocator, listener_exe, std_msgs_dependencies);
-    // amentTargetCDependencies(allocator, listener_exe, rcl_dependencies);
-
-    // const exe = b.addExecutable(.{ .name = "rclzig2", .root_module = rclzig_mod });
 
     // This declares intent for the executable to be installed into the
     // standard location when the user invokes the "install" step (the default
@@ -299,17 +246,12 @@ pub fn build(b: *std.Build) !void {
     const rclzig_tests = b.addTest(.{
         .root_module = rclzig_mod,
     });
-    // const std_msgs_tests = b.addTest(.{
-    //     .root_module = std_msgs_mod,
-    // });
 
     const run_rclzig_tests = b.addRunArtifact(rclzig_tests);
-    // const run_std_msgs_tests = b.addRunArtifact(std_msgs_tests);
 
     // Similar to creating the run step earlier, this exposes a `test` step to
     // the `zig build --help` menu, providing a way for the user to request
     // running the unit tests.
     const test_step = b.step("test", "Run unit tests");
     test_step.dependOn(&run_rclzig_tests.step);
-    // test_step.dependOn(&run_std_msgs_tests.step);
 }

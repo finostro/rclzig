@@ -62,7 +62,7 @@ fn rclAllocate(size: usize, state: ?*anyopaque) callconv(.C) ?*anyopaque {
         rcl_allocator.zig_allocator.free(result);
         return null;
     };
-    std.debug.print("allocator {any} allocated {any} bytes at {any}\n", .{ state, result.len, result.ptr });
+    // std.debug.print("allocator {any} allocated {any} bytes at {any}\n", .{ state, result.len, result.ptr });
     return result.ptr;
 }
 
@@ -85,7 +85,7 @@ fn rclDeallocate(opt_c_pointer: ?*anyopaque, state: ?*anyopaque) callconv(.C) vo
 
 fn rclReallocate(opt_c_pointer: ?*anyopaque, size: usize, state: ?*anyopaque) callconv(.C) ?*anyopaque {
     var rcl_allocator = @as(*RclAllocator, @ptrCast(@alignCast(state.?)));
-    std.debug.print("allocator {any} reallocating {any} bytes from {any}\n", .{ state, size, opt_c_pointer });
+    // std.debug.print("allocator {any} reallocating {any} bytes from {any}\n", .{ state, size, opt_c_pointer });
     if (opt_c_pointer) |c_pointer| {
         var zig_pointer: [*]u8 = @ptrCast(c_pointer);
         const opt_old_size = rcl_allocator.mem_map.get(@intFromPtr(c_pointer));

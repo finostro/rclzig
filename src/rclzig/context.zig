@@ -50,8 +50,13 @@ pub const Context = struct {
         var context = Context{
             .rcl_context = rcl.rcl_get_zero_initialized_context(),
         };
-        const rcl_ret = rcl.rcl_init(@intCast(argv.len), @intFromPtr(argv.ptr), &options.rcl_options, &context.rcl_context);
+        // std.debug.print("{any} , ptr {any}   , {any} \n", .{ argv, @intFromPtr(argv.ptr), @intFromPtr(&argv[0]) });
+
+        var ptr = @intFromPtr(argv.ptr);
+        if (argv.len == 0) ptr = 0;
+        const rcl_ret = rcl.rcl_init(@intCast(argv.len), ptr, &options.rcl_options, &context.rcl_context);
         if (rcl_ret != rcl.RCL_RET_OK) {
+            std.debug.print("error {any} when tryinb to initialize context", .{fromRclError(rcl_ret)});
             return fromRclError(rcl_ret);
         }
         return context;
@@ -87,6 +92,7 @@ test "check for memory leaks" {
     defer rcl_allocator.deinit();
 
     const argv = [_][]const u8{};
+    // std.debug.print("argv {any}   , len : {d}, ptr: {any}", .{ argv, argv.len, argv.ptr });
     var context_options = try ContextOptions.init(rcl_allocator);
     defer context_options.deinit();
     var context = try Context.init(&argv, context_options);

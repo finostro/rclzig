@@ -74,7 +74,14 @@ pub fn Publisher(comptime MsgType: type) type {
 const Context = @import("context.zig").Context;
 const ContextOptions = @import("context.zig").ContextOptions;
 const NodeOptions = @import("node.zig").NodeOptions;
-const std_msgs = @import("std_msgs");
+const msg = @import("msg.zig");
+
+pub const c = @cImport({
+    @cInclude("std_msgs/msg/string.h");
+    @cInclude("std_msgs/msg/float32_multi_array.h");
+    @cInclude("rcutils/allocator.h");
+});
+const StringMsg = msg.Msg(c, "std_msgs", "msg", "String");
 
 test "check for memory leaks" {
     var rcl_allocator = try RclAllocator.init(std.testing.allocator);
@@ -97,7 +104,7 @@ test "check for memory leaks" {
 
     // Initialize Publisher
     const publisher_options = PublisherOptions.init(rcl_allocator);
-    var publisher = try Publisher(std_msgs.msg.String).init(node, "chatter", publisher_options);
+    var publisher = try Publisher(StringMsg).init(node, "chatter", publisher_options);
     defer publisher.deinit(&node);
 
     // Shutdown Context

@@ -95,7 +95,14 @@ pub fn Subscription(comptime MsgType: type) type {
 const Context = @import("context.zig").Context;
 const ContextOptions = @import("context.zig").ContextOptions;
 const NodeOptions = @import("node.zig").NodeOptions;
-const std_msgs = @import("std_msgs");
+const msg = @import("msg.zig");
+
+pub const c = @cImport({
+    @cInclude("std_msgs/msg/string.h");
+    @cInclude("std_msgs/msg/float32_multi_array.h");
+    @cInclude("rcutils/allocator.h");
+});
+const StringMsg = msg.Msg(c, "std_msgs", "msg", "String");
 
 test "check for memory leaks" {
     var rcl_allocator = try RclAllocator.init(std.testing.allocator);
@@ -117,13 +124,13 @@ test "check for memory leaks" {
     defer node.deinit();
 
     // Initialize Subscription
-    const subscription_options = SubscriptionOptions.init(rcl_allocator.*);
-    var subscription = try Subscription(std_msgs.msg.String).init(node, "chatter", subscription_options);
+    const subscription_options = SubscriptionOptions.init(rcl_allocator);
+    var subscription = try Subscription(StringMsg).init(node, "chatter", subscription_options);
     defer subscription.deinit(&node);
 
     // Take
     var msg_info = MessageInfo.init();
-    const msg_opt: ?std_msgs.msg.String = try subscription.take(&msg_info);
+    const msg_opt: ?StringMsg = try subscription.take(&msg_info);
     try std.testing.expectEqual(msg_opt, null);
 
     // Shutdown Context
