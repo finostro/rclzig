@@ -33,11 +33,11 @@ fn amentTargetCDependencies(allocator: std.mem.Allocator, module: *std.Build.Mod
         }
     }
 
-    std.debug.print("amentTargetCDependencies\n", .{});
-
-    for (package_names) |name| {
-        std.debug.print("dependency name:    {s}\n", .{name});
-    }
+    // std.debug.print("amentTargetCDependencies\n", .{});
+    //
+    // for (package_names) |name| {
+    //     std.debug.print("dependency name:    {s}\n", .{name});
+    // }
 
     const ament_env = std.posix.getenv("AMENT_PREFIX_PATH");
     if (ament_env) |ament_prefix| {
@@ -58,7 +58,7 @@ fn amentTargetCDependencies(allocator: std.mem.Allocator, module: *std.Build.Mod
                                 if (std.mem.eql(u8, pname, entry.name)) {
                                     const paths = [_][]const u8{ base_include_dir, entry.name };
                                     const full_path = try std.fs.path.join(allocator, &paths);
-                                    std.debug.print("adding include path: {s} \n", .{full_path});
+                                    // std.debug.print("adding include path: {s} \n", .{full_path});
                                     defer allocator.free(full_path);
                                     module.addIncludePath(.{ .cwd_relative = full_path });
                                 }
@@ -86,7 +86,7 @@ fn amentTargetCDependencies(allocator: std.mem.Allocator, module: *std.Build.Mod
                                     const paths = [_][]const u8{ base_include_dir, entry.name };
                                     const full_path = try std.fs.path.join(allocator, &paths);
                                     defer allocator.free(full_path);
-                                    std.debug.print("adding link path: {s} \n", .{full_path});
+                                    // std.debug.print("adding link path: {s} \n", .{full_path});
                                     module.addLibraryPath(.{ .cwd_relative = full_path });
                                     try linkAllFiles(module, full_path);
                                 }
