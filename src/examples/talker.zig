@@ -95,7 +95,8 @@ pub fn main() anyerror!void {
     while (true) {
         const time_since_publish: u64 = timer.read();
         if (time_since_publish >= publish_period) {
-            std.log.info("Publishing message\n", .{});
+            const now = try node.now();
+            std.log.info("Publishing message at time {any}\n", .{now});
             publisher.publish(message);
             timer.reset();
             continue;

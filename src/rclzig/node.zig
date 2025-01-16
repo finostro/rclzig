@@ -22,10 +22,12 @@ const fromRclError = @import("errors.zig").fromRclError;
 
 pub const NodeOptions = struct {
     rcl_options: rcl.rcl_node_options_t,
+    rcl_clock_type: rcl.rcl_clock_type_t,
 
     pub fn init(allocator: *RclAllocator) NodeOptions {
         var node_options = NodeOptions{
             .rcl_options = rcl.rcl_node_get_default_options(),
+            .rcl_clock_type = rcl.RCL_ROS_TIME,
         };
         node_options.rcl_options.allocator = allocator.c_allocator;
 
@@ -44,15 +46,25 @@ pub const Node = struct {
     rcl_node: rcl.rcl_node_t,
     name: []const u8,
     namespace: []const u8,
+    rcl_clock: rcl.rcl_clock_t,
 
     pub fn init(name: []const u8, namespace: []const u8, context: *Context, options: NodeOptions) !Node {
         var node = Node{
             .rcl_node = rcl.rcl_get_zero_initialized_node(),
             .name = name,
             .namespace = namespace,
+            .rcl_clock = undefined,
         };
         const init_ret = rcl.rcl_node_init(&node.rcl_node, @intFromPtr(node.name.ptr), @intFromPtr(node.namespace.ptr), &context.rcl_context, &options.rcl_options);
         if (init_ret != rcl.RCL_RET_OK) {
+            return fromRclError(init_ret);
+        }
+        const init_clock_ret = rcl.rcl_clock_init(
+            options.rcl_clock_type,
+            @intFromPtr(&node.rcl_clock),
+            @intFromPtr(&options.rcl_options.allocator),
+        );
+        if (init_clock_ret != rcl.RCL_RET_OK) {
             return fromRclError(init_ret);
         }
         return node;
@@ -63,6 +75,19 @@ pub const Node = struct {
         if (fini_ret != rcl.RCL_RET_OK) {
             std.log.err("failed to finalize rcl_node_t ({})\n", .{fini_ret});
         }
+        const clock_fini_ret = rcl.rcl_clock_fini(&self.rcl_clock);
+        if (clock_fini_ret != rcl.RCL_RET_OK) {
+            std.log.err("failed to finalize rcl_clock_t ({})\n", .{clock_fini_ret});
+        }
+    }
+
+    pub fn now(self: *Node) !rcl.rcl_time_point_value_t {
+        var ret: rcl.rcl_time_point_value_t = undefined;
+        const rcl_ret = rcl.rcl_clock_get_now(@intFromPtr(&self.rcl_clock), @intFromPtr(&ret));
+        if (rcl_ret != rcl.RCL_RET_OK) {
+            return fromRclError(rcl_ret);
+        }
+        return ret;
     }
 };
 

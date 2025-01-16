@@ -14,5 +14,6 @@
 
 pub const rcl = @cImport({
     @cInclude("rcl/rcl.h");
+    @cInclude("rcl/time.h");
     @cInclude("rcutils/allocator.h");
 });
